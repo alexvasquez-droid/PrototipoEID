@@ -196,7 +196,7 @@ function App() {
 
         {/* --- SECCIÓN RINCÓN DEL ALUMNO CON BOTÓN QR --- */}
         <section className="section-card student-card">
-          <div className="badge-alumno">ALUMNO</div>
+          <div className="badge-alumno">✏️</div>
           <h3 className="section-title">🦉 Rincón del Alumno</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button className="btn-azul-full" onClick={() => setCurrentView('buho')}>Abrir Técnica del Búho</button>
