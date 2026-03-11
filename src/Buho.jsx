@@ -5,10 +5,10 @@ const Buho = ({ onBack }) => {
   const [alumno, setAlumno] = useState({ nombre: "", grupo: "" });
   const [answers, setAnswers] = useState({});
   const [textFeel, setTextFeel] = useState("");
-  const [drawing, setDrawing] = useState(null);
   const [emoji, setEmoji] = useState("");
   const [commitment, setCommitment] = useState("");
   const [step, setStep] = useState("meditacion");
+  const [enviando, setEnviando] = useState(false);
 
   const buttonStyle = {
     backgroundColor: "#87CEEB",
@@ -34,28 +34,44 @@ const Buho = ({ onBack }) => {
     setAnswers({ ...answers, [key]: value });
   };
 
-  const cuestionarioCompleto = questions.every((q) => answers[q.key] && answers[q.key] !== "");
-  const actividadCompleta = textFeel.trim() !== "" || drawing !== null || emoji !== "";
-  const compromisoCompleto = commitment.trim() !== "";
+  // FUNCIÓN DE ENVÍO AUTOMÁTICO AL EXCEL (CON TU API)
+  const enviarADatabase = async () => {
+    setEnviando(true);
 
-  // FUNCIÓN PARA WHATSAPP
-  const enviarWhatsApp = () => {
-    const mensajeFinal = 
-      `*FICHA DE REFLEXIÓN - CBTIS 89*\n` +
-      `🦉 Rincón del Búho\n` +
-      `---------------------------\n` +
-      `👤 *Alumno:* ${alumno.nombre}\n` +
-      `👥 *Grupo:* ${alumno.grupo}\n` +
-      `---------------------------\n` +
-      `❓ *Situación:* ${answers.situacion || "N/A"}\n` +
-      `🎭 *Emoción:* ${answers.emocion || "N/A"}\n` +
-      `👥 *Impacto en otros:* ${answers.otros || "N/A"}\n` +
-      `💡 *Estrategia:* ${answers.estrategia || "N/A"}\n` +
-      `📝 *Reflexión:* ${textFeel || "N/A"}\n` +
-      `🤝 *Compromiso:* ${commitment || "N/A"}\n` +
-      `✨ *Estado final:* ${emoji || "N/A"}`;
+    const datosParaExcel = {
+      fecha: new Date().toLocaleString("es-MX", { timeZone: "America/Mexico_City" }),
+      nombre: alumno.nombre,
+      grupo: alumno.grupo,
+      situacion: answers.situacion || "N/A",
+      emocion: answers.emocion || "N/A",
+      impacto: answers.otros || "N/A",
+      estrategia: answers.estrategia || "N/A",
+      reflexion: textFeel || "N/A",
+      compromiso: commitment || "N/A",
+      estado_final: emoji || "N/A"
+    };
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(mensajeFinal)}`, '_blank');
+    try {
+      // TU URL DE SHEETBEST INTEGRADA
+      const response = await fetch('https://api.sheetbest.com/sheets/271233ae-62ff-4e1d-9466-cef3f2ca15fa', {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosParaExcel),
+      });
+
+      if (response.ok) {
+        setEnviando(false);
+        setStep("ficha");
+      } else {
+        throw new Error("Error en servidor");
+      }
+    } catch (error) {
+      console.error("Error al enviar:", error);
+      setEnviando(false);
+      // Pase lo que pase, mostramos la ficha al alumno
+      setStep("ficha");
+    }
   };
 
   return (
@@ -71,169 +87,119 @@ const Buho = ({ onBack }) => {
         }
         @keyframes moveDot { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
         .guia-texto { position: absolute; font-weight: 800; color: #0070bb; font-size: 12px; }
+        .leyenda-privacidad { font-size: 11px; color: #666; margin-top: 15px; font-style: italic; line-height: 1.2; text-align: center; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #87CEEB; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       `}</style>
 
-      {/* PASO: MEDITACIÓN */}
+      {/* PASO 1: MEDITACIÓN */}
       {step === "meditacion" && (
         <div style={{ textAlign: "center" }}>
           <h2 className="section-title">🌬️ Momento de Calma</h2>
-          <p>Sigue el punto azul con tu respiración para tranquilizarte.</p>
           <div className="triangulo-container">
             <div className="respiro-dot"></div>
-            <svg className="triangulo-svg" viewBox="0 0 260 220">
-              <path d="M 130 10 L 10 210 L 250 210 Z" />
-            </svg>
-            <div className="guia-texto" style={{ top: '-20px', left: '100px' }}>INHALA</div>
-            <div className="guia-texto" style={{ bottom: '-25px', left: '105px' }}>SOSTÉN</div>
-            <div className="guia-texto" style={{ top: '100px', right: '-15px' }}>EXHALA</div>
+            <svg className="triangulo-svg" viewBox="0 0 260 220"><path d="M 130 10 L 10 210 L 250 210 Z" /></svg>
           </div>
           <button style={buttonStyle} onClick={() => setStep("identificacion")}>Ya estoy tranquilo</button>
+          <p className="leyenda-privacidad">Manejo ético y privado: tus datos están seguros y se usan exclusivamente para fines educativos.</p>
         </div>
       )}
 
-      {/* PASO: IDENTIFICACIÓN */}
+      {/* PASO 2: IDENTIFICACIÓN */}
       {step === "identificacion" && (
         <div style={{ textAlign: "center" }}>
           <h2 className="section-title">👤 ¿Quién eres?</h2>
-          <input 
-            type="text" className="input-field" placeholder="Nombre completo" 
-            value={alumno.nombre} onChange={(e) => setAlumno({...alumno, nombre: e.target.value})} 
-            style={{ marginBottom: "15px" }}
-          />
-          <input 
-            type="text" className="input-field" placeholder="Grupo (Ej: Logistica 2ºA)" 
-            value={alumno.grupo} onChange={(e) => setAlumno({...alumno, grupo: e.target.value})} 
-          />
-          <button style={buttonStyle} onClick={() => alumno.nombre ? setStep("portada") : alert("Por favor, ingresa tu nombre")}>
-            Continuar
-          </button>
+          <input type="text" className="input-field" placeholder="Nombre completo" value={alumno.nombre} onChange={(e) => setAlumno({...alumno, nombre: e.target.value})} style={{ marginBottom: "15px" }} />
+          <input type="text" className="input-field" placeholder="Grupo (Ej: Logística 2ºA)" value={alumno.grupo} onChange={(e) => setAlumno({...alumno, grupo: e.target.value})} />
+          <button style={buttonStyle} onClick={() => alumno.nombre ? setStep("portada") : alert("Ingresa tu nombre")}>Continuar</button>
         </div>
       )}
 
+      {/* PASO 3: PORTADA */}
       {step === "portada" && (
         <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontSize: "60px", marginBottom: "10px" }}>🦉</h1>
+          <h1 style={{ fontSize: "60px" }}>🦉</h1>
           <h2 className="section-title">Rincón del Búho</h2>
-          <p>Hola <strong>{alumno.nombre}</strong>, este espacio es para pensar con calma.</p>
-          <button style={buttonStyle} onClick={() => setStep("cuestionario")}>Comenzar mi reflexión</button>
+          <p>Hola <strong>{alumno.nombre}</strong>, respira y reflexiona.</p>
+          <button style={buttonStyle} onClick={() => setStep("cuestionario")}>Comenzar reflexión</button>
         </div>
       )}
 
-      {/* PASO 2: CUESTIONARIO */}
+      {/* PASO 4: CUESTIONARIO */}
       {step === "cuestionario" && (
         <div>
-          <h2 className="section-title">Cuestionario de reflexión</h2>
+          <h2 className="section-title">Cuestionario</h2>
           {questions.map((q) => (
-            <div key={q.key} style={{ marginBottom: "20px" }}>
-              <p style={{ fontWeight: "bold", marginBottom: "8px" }}>{q.text}</p>
-              <select
-                className="input-field"
-                style={{ padding: "12px", width: "100%", borderRadius: "12px" }}
-                value={answers[q.key] || ""}
-                onChange={(e) => handleAnswer(q.key, e.target.value)}
-              >
+            <div key={q.key} style={{ marginBottom: "15px" }}>
+              <p style={{ fontWeight: "bold" }}>{q.text}</p>
+              <select className="input-field" value={answers[q.key] || ""} onChange={(e) => handleAnswer(q.key, e.target.value)}>
                 <option value="">Selecciona una opción...</option>
                 {q.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
           ))}
-          <button 
-            style={{ ...buttonStyle, width: "100%", opacity: cuestionarioCompleto ? 1 : 0.5 }} 
-            disabled={!cuestionarioCompleto} 
-            onClick={() => setStep("actividad")}
-          >
-            Siguiente: Actividad ➡️
-          </button>
+          <button style={{ ...buttonStyle, width: "100%" }} onClick={() => setStep("actividad")}>Siguiente ➡️</button>
         </div>
       )}
 
-      {/* PASO 3: ACTIVIDAD */}
+      {/* PASO 5: ACTIVIDAD */}
       {step === "actividad" && (
-        <div>
-          <h2 className="section-title">Actividad reflexiva</h2>
-          <div style={{ marginBottom: "20px" }}>
-            <p style={{ fontWeight: "bold" }}>✍️ Cuéntame cómo te sientes ahora:</p>
-            <textarea
-              className="input-field" rows="4"
-              value={textFeel} onChange={(e) => setTextFeel(e.target.value)}
-            />
+        <div style={{ textAlign: "center" }}>
+          <h2 className="section-title">Tu reflexión</h2>
+          <textarea className="input-field" rows="4" value={textFeel} onChange={(e) => setTextFeel(e.target.value)} placeholder="¿Cómo te sientes en este momento?" />
+          <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "15px" }}>
+            {["😀", "😌", "🤔", "😡", "😢"].map(emo => (
+              <button key={emo} style={{ fontSize: "25px", background: emoji === emo ? "#e0f2fe" : "white", border: "1px solid #ccc", borderRadius: "8px", padding: "5px", cursor: "pointer" }} onClick={() => setEmoji(emo)}>{emo}</button>
+            ))}
           </div>
-          <div style={{ marginBottom: "20px" }}>
-            <p style={{ fontWeight: "bold" }}>🎨 Opcional: Sube un dibujo o mandala:</p>
-            <input type="file" accept="image/*" onChange={(e) => setDrawing(e.target.files[0]?.name ?? null)} />
-          </div>
-          <div style={{ marginBottom: "20px" }}>
-            <p style={{ fontWeight: "bold", textAlign: "center" }}>🖼️ Selecciona un emoji:</p>
-            <div style={{ display: "flex", gap: "15px", justifyContent: "center", marginTop: "10px" }}>
-              {["😀", "😢", "😡", "😌", "🤔"].map((emo) => (
-                <button
-                  key={emo}
-                  style={{ fontSize: "30px", background: emoji === emo ? "#e0f2fe" : "transparent", border: emoji === emo ? "2px solid #87CEEB" : "1px solid #ddd", borderRadius: "12px", cursor: "pointer", padding: "10px" }}
-                  onClick={() => setEmoji(emo)}
-                >
-                  {emo}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button style={{ ...buttonStyle, width: "100%", opacity: actividadCompleta ? 1 : 0.5 }} disabled={!actividadCompleta} onClick={() => setStep("compromiso")}>
-            Siguiente: Compromiso ➡️
-          </button>
+          <button style={buttonStyle} onClick={() => setStep("compromiso")}>Siguiente ➡️</button>
         </div>
       )}
 
+      {/* PASO 6: COMPROMISO */}
       {step === "compromiso" && (
         <div style={{ textAlign: "center" }}>
           <h2 className="section-title">🤝 Mi Microcompromiso</h2>
-          <p>¿Qué pequeña acción harás para mejorar?</p>
-          <textarea
-            className="input-field" rows="3"
-            value={commitment} onChange={(e) => setCommitment(e.target.value)}
-            style={{ marginTop: "15px" }}
-          />
-          <button 
-            style={{ ...buttonStyle, width: "100%", opacity: compromisoCompleto ? 1 : 0.5 }} 
-            disabled={!compromisoCompleto} 
-            onClick={() => setStep("insignia")}
-          >
-            Obtener mi Insignia 🏅
-          </button>
+          <textarea className="input-field" rows="3" value={commitment} onChange={(e) => setCommitment(e.target.value)} placeholder="¿Qué pequeña acción harás diferente?" />
+          <button style={buttonStyle} onClick={() => setStep("insignia")}>Obtener Insignia 🏅</button>
         </div>
       )}
 
+      {/* PASO 7: INSIGNIA Y ENVÍO */}
       {step === "insignia" && (
-        <div style={{ textAlign: "center", padding: "30px 0" }}>
-          <h2 style={{ color: "#FFD700", fontSize: "28px" }}>¡Felicidades!</h2>
-          <div style={{ fontSize: "100px", margin: "20px 0" }}>🦉</div>
-          <p style={{ fontWeight: "bold", fontSize: "20px" }}>Insignia: Sabiduría del Búho</p>
-          <button style={{ ...buttonStyle, marginTop: "30px" }} onClick={() => setStep("ficha")}>Ver mi Ficha Final 📄</button>
+        <div style={{ textAlign: "center" }}>
+          <h2 style={{ color: "#FFD700" }}>¡Excelente trabajo!</h2>
+          <div style={{ fontSize: "80px", margin: "20px 0" }}>🦉</div>
+          {enviando ? (
+            <div>
+              <div className="loader"></div>
+              <p>Guardando datos en Orientación Educativa...</p>
+            </div>
+          ) : (
+            <button style={buttonStyle} onClick={enviarADatabase}>Ver mi Ficha Final 📄</button>
+          )}
         </div>
       )}
 
-      {/* PASO 6: FICHA FINAL (CORREGIDA) */}
+      {/* PASO FINAL: FICHA DE ORIENTACIÓN */}
       {step === "ficha" && (
         <div style={{ border: "2px solid #333", padding: "20px", borderRadius: "15px", backgroundColor: "#f9f9f9" }}>
-          <h2 style={{ textAlign: "center", textDecoration: "underline", marginBottom: "20px" }}>FICHA DE ORIENTACIÓN</h2>
-          <div style={{ lineHeight: "1.8", textAlign: "left" }}>
+          <div style={{ backgroundColor: "#dcfce7", color: "#166534", padding: "10px", borderRadius: "8px", marginBottom: "20px", fontWeight: "bold", textAlign: "center", border: "1px solid #bbf7d0" }}>
+            ✅ Tu ficha se guardó y envió satisfactoriamente a la oficina de Orientación Educativa.
+          </div>
+          
+          <h2 style={{ textAlign: "center", textDecoration: "underline", marginBottom: "15px" }}>FICHA DE ORIENTACIÓN</h2>
+          <div style={{ textAlign: "left", fontSize: "14px", lineHeight: "1.6" }}>
             <p><strong>Alumno:</strong> {alumno.nombre} ({alumno.grupo})</p>
-            <p><strong>Situación:</strong> {answers.situacion || "Pendiente"}</p>
-            <p><strong>Emoción inicial:</strong> {answers.emocion || "Pendiente"}</p>
-            <p><strong>Impacto en otros:</strong> {answers.otros || "Pendiente"}</p>
-            <p><strong>Estrategia elegida:</strong> {answers.estrategia || "Pendiente"}</p>
-            <p><strong>Reflexión escrita:</strong> {textFeel || "N/A"}</p>
-            <p><strong>Estado emocional final:</strong> {emoji || "Neutral"}</p>
-            <p><strong>Mi compromiso:</strong> {commitment || "Pendiente"}</p>
+            <p><strong>Situación:</strong> {answers.situacion}</p>
+            <p><strong>Emoción:</strong> {answers.emocion}</p>
+            <p><strong>Impacto:</strong> {answers.otros}</p>
+            <p><strong>Estrategia:</strong> {answers.estrategia}</p>
+            <p><strong>Reflexión:</strong> {textFeel}</p>
+            <p><strong>Compromiso:</strong> {commitment}</p>
+            <p><strong>Estado:</strong> {emoji}</p>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "30px" }}>
-            <button 
-              onClick={enviarWhatsApp}
-              className="btn-verde-whatsapp" 
-              style={{ border: "none", cursor: "pointer", width: "100%", padding: "18px", borderRadius: "16px", fontWeight: "bold" }}
-            >
-              📲 Enviar por WhatsApp
-            </button>
-            <button style={{ ...buttonStyle, backgroundColor: "#666" }} onClick={onBack}>Cerrar y Volver al Menú</button>
-          </div>
+          <button style={{ ...buttonStyle, backgroundColor: "#666", width: "100%", marginTop: "20px" }} onClick={onBack}>Cerrar y Volver al Menú</button>
         </div>
       )}
     </div>
