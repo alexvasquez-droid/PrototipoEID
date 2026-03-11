@@ -34,10 +34,8 @@ const Buho = ({ onBack }) => {
     setAnswers({ ...answers, [key]: value });
   };
 
-  // FUNCIÓN DE ENVÍO AUTOMÁTICO AL EXCEL (CON TU API)
   const enviarADatabase = async () => {
     setEnviando(true);
-
     const datosParaExcel = {
       fecha: new Date().toLocaleString("es-MX", { timeZone: "America/Mexico_City" }),
       nombre: alumno.nombre,
@@ -52,7 +50,6 @@ const Buho = ({ onBack }) => {
     };
 
     try {
-      // TU URL DE SHEETBEST INTEGRADA
       const response = await fetch('https://api.sheetbest.com/sheets/271233ae-62ff-4e1d-9466-cef3f2ca15fa', {
         method: 'POST',
         mode: 'cors',
@@ -69,7 +66,6 @@ const Buho = ({ onBack }) => {
     } catch (error) {
       console.error("Error al enviar:", error);
       setEnviando(false);
-      // Pase lo que pase, mostramos la ficha al alumno
       setStep("ficha");
     }
   };
@@ -86,19 +82,27 @@ const Buho = ({ onBack }) => {
           animation: moveDot 12s infinite linear; box-shadow: 0 0 15px #87CEEB;
         }
         @keyframes moveDot { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
-        .guia-texto { position: absolute; font-weight: 800; color: #0070bb; font-size: 12px; }
+        .guia-texto { position: absolute; font-weight: 800; color: #0070bb; font-size: 14px; }
         .leyenda-privacidad { font-size: 11px; color: #666; margin-top: 15px; font-style: italic; line-height: 1.2; text-align: center; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #87CEEB; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       `}</style>
 
-      {/* PASO 1: MEDITACIÓN */}
+      {/* PASO 1: MEDITACIÓN CON GUÍAS RECUPERADAS */}
       {step === "meditacion" && (
         <div style={{ textAlign: "center" }}>
           <h2 className="section-title">🌬️ Momento de Calma</h2>
+          <p>Sigue el punto con tu respiración</p>
           <div className="triangulo-container">
             <div className="respiro-dot"></div>
-            <svg className="triangulo-svg" viewBox="0 0 260 220"><path d="M 130 10 L 10 210 L 250 210 Z" /></svg>
+            {/* Etiquetas de guía */}
+            <span className="guia-texto" style={{ top: "215px", left: "50%", transform: "translateX(-50%)" }}>RETÉN</span>
+            <span className="guia-texto" style={{ bottom: "120px", left: "20px", transform: "rotate(-60deg)" }}>INHALA</span>
+            <span className="guia-texto" style={{ bottom: "120px", right: "20px", transform: "rotate(60deg)" }}>EXHALA</span>
+            
+            <svg className="triangulo-svg" viewBox="0 0 260 220">
+              <path d="M 130 10 L 10 210 L 250 210 Z" />
+            </svg>
           </div>
           <button style={buttonStyle} onClick={() => setStep("identificacion")}>Ya estoy tranquilo</button>
           <p className="leyenda-privacidad">Manejo ético y privado: tus datos están seguros y se usan exclusivamente para fines educativos.</p>
